@@ -6,21 +6,23 @@ This guide is written for embedded developers who work on connected products.
 That includes microcontroller based systems that operate in bare metal or
 RTOS mode, as well as microprocessor based systems which run embedded Linux.
 
-All fundamental concepts are explained in details. A reader is expected to be
-familiar with microcontroller C programming - for that matter, I recommend
-reading my [bare metal programming
-guide](https://github.com/cpq/bare-metal-programming-guide).  All source code
-in this guide is MIT licensed, however examples use [Mongoose
-Library](https://github.com/cesanta/mongoose), which is licensed under a dual
-GPLv2/commercial license.
-
-I will be using Ethernet-enabled Nucleo-H743ZI board throughout this guide.
-Examples for other architectures are summarized in a table below - this list
-will expand with time.
-
 ## Prerequisites
 
+All fundamental concepts are explained in details, so the guide should be
+understood by a reader with no prior networking knowledge.
+
+A reader is expected to be
+familiar with microcontroller C programming - for that matter, I recommend
+reading my [bare metal programming
+guide](https://github.com/cpq/bare-metal-programming-guide). 
+I will be using Ethernet-enabled Nucleo-H743ZI board throughout this guide.
+Examples for other architectures are summarized in a table below - this list
+will expand with time. Regardless, for the best experience I recommend
+Nucleo-H743ZI to get the most from this guide. [Buy it on Mouser](https://www.mouser.ie/ProductDetail/STMicroelectronics/NUCLEO-H743ZI2?qs=lYGu3FyN48cfUB5JhJTnlw%3D%3D).
+
 ## Network stack explained
+
+### Network frame structure
 
 When any two devices communicate, they exchange discrete pieces of data called
 frames. Frames can be sent over the wire (like Ethernet) or over the air (like
@@ -64,6 +66,7 @@ a frame to the correct device and application over the Internet. When a frame
 arrives to a device, a software that handles that frame, is organised 
 in four layers:
 
+### Network stack architecture
 
 ![Network Stack](media/stack.svg)
 
@@ -72,6 +75,8 @@ Layer 2: **TCP/IP stack**, parses protocol headers and handles IP and TCP/UDP
 Layer 3: **Network Library**, parses application protocols like MQTT or HTTP  
 Layer 4: **Application**, is made by you, firmware developer  
 
+
+### DNS request example
 
 Let's provide an example. In order to show your this guide on the Github, your
 browser first needs to find out the IP address of the Github's machine. For
@@ -112,6 +117,8 @@ call, passing UDP payload to it
    decides, what to respond, and the response travels all the way back in the
    reverse order.
 
+### BSD socket API
+
 The communication between layers are done via a function calls. So, each
 layer has its own API, which uppper and lower level can call. They are not
 standardized, so each implementation provides their own set of functions.
@@ -151,6 +158,8 @@ Some implementations do not implement BSD socket API, and there are perfectly
 good reasons for that. Examples for such implementation is lwIP raw API,
 and Mongoose Library.
 
+### TCP echo server implemented with socket API
+
 Let me demonstrate the two approaches on a simple
 TCP echo server example. TCP echo server is a simple application that
 listens on a TCP port, receives data from clients that connect to that port,
@@ -187,23 +196,29 @@ embedded receive path looks like with socket API:
 The `send()` part would work in the reverse direction. Note that this approach
 requires TCP/IP stack implement data buffering for each socket, because
 an application consumes received data not immediately, but after some time,
-when RTOS queue delivers data. Therefore this approach with socket API has
+when RTOS queue delivers data. Note that using non-blocking sockets and
+`select()/poll()` changes things that instead of many application tasks,
+there is only one application task, but the mechanism stays the same.
+
+Therefore this approach with socket API has
 the following major characteristics:
 
-1. It uses RTOS queues for exchanging data between tasks, which consumes
-   both RAM and time
+1. It uses queues for exchanging data between TCP/IP stack and
+   application tasks, which consumes both RAM and time
 2. TCP/IP stack buffers received and sent data for each socket. Note that
    the app/library layer may also buffer data - for example, buffering a full
    HTTP request before it can be processed. So the same data goes through
-   two buffering "zones" - TCP/IP stack, and library/app, running in two
-   separate tasks
+   two buffering "zones" - TCP/IP stack, and library/app
 
 That means, socket API implementation takes extra time for data to be processed,
 and takes extra RAM for double-buffering in the TCP/IP stack.
 
-Now let's see how the same approach works without BSD socket API. lwIP raw API,
-and Mongoose, provide a callback API to the TCP/IP stack. Here is how TCP
-echo server would look like written using Mongoose API:
+### TCP echo server implemented with callback API
+
+Now let's see how the same approach works without BSD socket API. Several
+implementations, including lwIP and Mongoose Library, provide callback API to
+the TCP/IP stack. Here is how TCP echo server would look like written using
+Mongoose API:
 
 ```c
 // This callback function is called for various network events, MG_EV_*
@@ -230,6 +245,40 @@ memory usage and performance. A firmware developer should use
 a proprietory callback API instead of BSD socket API.
 
 ## Implementing layers 1,2,3 - making ping work
+
+### Development environment and tools
+
+Now let's make our hands dirty and implement a working network stack on
+a microcontroller board. I will be using
+[Mongoose Library](https://github.com/cesanta/mongoose) for all examples
+further on, for the following reasons:
+
+- Mongoose is very easy to integrate: just by copying two files,
+  [mongoose.c]() and [mongoose.h]()
+- Mongoose has a built-in drivers, TCP/IP stack, HTTP/MQTT/Websocket library,
+  and TLS 1.3 all in one, so it does not need any other software to create
+  a network-enabled application
+- Mongoose provides a simple, polished callback API designed specifically
+  for embedded developers
+
+All source code in this guide is MIT licensed, however Mongoose
+is licensed under a dual GPLv2/commercial license.
+
+I will be using a Nucleo board from ST Microelectronics, and there are several choices for the
+development environment:
+- Use Cube IDE provided by ST
+- Use Keil from ARM
+- Use make + GCC compiler, no IDE
+
+Here, I am going to use Cube IDE. In the templates, however, both Keil and
+make examples are provided, too. So, in order to proceed, install Cube IDE
+on your workstation, and plug in Nucleo board to your workstation.
+
+### Skeleton firmware
+
+The first step would be to create a minimal, skeleton firmware that does
+nothing but logs messages to the serial console. Once we've done that,
+
 
 ## Implementing layer 4 - a simple web server
 
