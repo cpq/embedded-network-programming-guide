@@ -233,24 +233,6 @@ a proprietory callback API instead of BSD socket API.
 
 ## Implementing layer 4 - a simple web server
 
-## Socket API
-
-Many network stack implementations do not provide high level library API:
-they let user to implement it. Therefore, the API they provide is the API
-to TCP or UDP functionality. Let's take for example of the popular network
-stack implementations, lwIP (LightWeight IP).
-
-First of, lwIP has 3 APIs: raw callback-based, netconn, and socket.
-Depending on an API, the architecture of the whole stack is different.
-
-The raw API handles frames in the same task: driver -> stack -> application, and data is passed via a direct function call.
-This is also how Mongoose stack works. This is the fastest architecture in terms of performance. I won't cover LWIP netconn here: it is a "connection abstraction" built on top of raw lwip, very much like Mongoose, which also has a "struct mg_connection" abstraction.
-
-The socket API organises frame handling differently. TCP/IP stack and user app run in different RTOS tasks, and data is passed not via direct function calls, but via a RTOS queue. This makes an implementation slower in comparison to the "raw callback" one, but on the other hand it allows blocking send()/recv() calls. A user app task can block whilst not blocking the driver or stack. Also, a typical lwip firmware runs a separate task to sense PHY status.
-
-Socket layer organises it's own data buffering, to allow app to read data long time after it was received. Data gets buffered by each socket's send/recv buffers, and application has its own buffers. Mongoose built-in stack does not use sockets API, thus it does not have that intermediate buffering - as well as raw LWIP. That means that socket-based implementations are more memory hungry than non-socket. So, socket-based frame handling looks like this:
-driver (queue)--> stack + socket buffers task (queue)--> application task
-
 ## Baremetal, RTOS, and OS environments
 
 ## Implementing Web UI
