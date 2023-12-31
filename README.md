@@ -158,49 +158,76 @@ and writes (echoes) that data back to the client. That means, this application
 does not use any application protocol on top of TCP, thus it does not need
 a library layer. Let's see how this application would look like written
 with a BSD socket API. First, a TCP listener should bind to a port, and
-for every connected client, spawn a new thread that would handle it:
-
-```c
-  // Create TCP socket
-  int sock = socket(PF_INET, SOCK_STREAM, 6);
-
-  // Let is listen on port 1234
-  struct sockaddr_in sin = {.sin_family = AF_INET, .sin_port = htons(1234), .sin_addr = INADDR_ANY };
-  bind(sock, &sin, sizeof(sin));
-
-  // Accept connections in the infinite loop
-  for (;;) {
-    struct sockaddr_in new_addr;  // This will receive IP:PORT of the remote peer
-    socklen_t len = sizeof(new_addr);
-    int accepted_socket = accept(sock, &new_addr, &len);
-    start_thread(handle_new_connection, (void *) accepted_socket);
-  }
-```
-
-For every new connection, a new thread executes the following code:
+for every connected client, spawn a new thread that would handle it. A thread
+function that sends/receives data, looks something like this:
 
 ```c
 void handle_new_connection(int sock) {
+  char buf[20];
   for (;;) {
-    char buf[20];
     ssize_t len = recv(sock, buf, sizeof(buf), 0); // Receive data from remote
-    if (len <= 0) break;   // Error! Exit the loop, close socket, stop thread
+    if (len <= 0) break;   // Error! Exit the loop
     send(sock, buf, len);  // Success. Echo data back
   }
-  close(sock);
+  close(sock);  // Close socket, stop thread
 }
 ```
 
-Note that `recv()` function blocks until it receives some data from the
-client. Then, `send()` also blocks until is sends requested data back to the
-client. That means that this code cannot run in a bare metal implementation,
-because it will block the whole firmware. For this to work, an RTOS is
-required. A TCP/IP stack should run in a separate RTOS task, and both `send()`
-and `recv()` functions are implemented using an RTOS queue API, providing a
-blocking way to pass data from one task to another. Overall, this is how
-an embedded receive path looks like with socket API:
+Note that `recv()` function blocks until it receives some data from the client.
+Then, `send()` also blocks until is sends requested data back to the client.
+That means that this code cannot run in a bare metal implementation, because
+`recv()` would block the whole firmware. For this to work, an RTOS is required.
+A TCP/IP stack should run in a separate RTOS task, and both `send()` and
+`recv()` functions are implemented using an RTOS queue API, providing a
+blocking way to pass data from one task to another. Overall, this is how an
+embedded receive path looks like with socket API:
 
+![BSD socket API](media/socket.svg)
 
+The `send()` part would work in the reverse direction. Note that this approach
+requires TCP/IP stack implement data buffering for each socket, because
+an application consumes received data not immediately, but after some time,
+when RTOS queue delivers data. Therefore this approach with socket API has
+the following major characteristics:
+
+1. It uses RTOS queues for exchanging data between tasks, which consumes
+   both RAM and time
+2. TCP/IP stack buffers received and sent data for each socket. Note that
+   the app/library layer may also buffer data - for example, buffering a full
+   HTTP request before it can be processed. So the same data goes through
+   two buffering "zones" - TCP/IP stack, and library/app, running in two
+   separate tasks
+
+That means, socket API implementation takes extra time for data to be processed,
+and takes extra RAM for double-buffering in the TCP/IP stack.
+
+Now let's see how the same approach works without BSD socket API. lwIP raw API,
+and Mongoose, provide a callback API to the TCP/IP stack. Here is how TCP
+echo server would look like written using Mongoose API:
+
+```c
+// This callback function is called for various network events, MG_EV_*
+void event_handler(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
+  if (ev == MG_EV_READ) {
+    // MG_EV_READ means that new data got buffered in the c->recv buffer
+    mg_send(c, c->recv.buf, c->recv.len);  // Send back the data we received
+    c->recv.len = 0;  // Discard received data
+  }
+}
+```
+
+In this case, all functions are non-blocking, that means that data exchange
+between TCP/IP stack and an app can be implemented via direct function calls.
+This is how receive path looks like:
+
+![Raw callback API](media/raw.svg)
+
+As you can see, in this case TCP/IP stack provides a callback API which
+a library or application layer can use to receive data directly. No need
+to send it over a queue. A library/app layer can buffer data, and that's
+the only place where buffering takes place. This approach wins for
+memory usage and performance. A firmware developer should use
+a proprietory callback API instead of BSD socket API.
 
 ## Implementing layers 1,2,3 - making ping work
 
