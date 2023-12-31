@@ -67,10 +67,10 @@ in four layers:
 
 ![Network Stack](media/stack.svg)
 
-1. Layer 1: **Driver layer**, only reads and writes frames from/to network hardware
-2. Layer 2: **TCP/IP stack**, parses protocol headers and handles IP and TCP/UDP
-3. Layer 3: **Network Library**, parses application protocols like MQTT or HTTP
-4. Layer 4: **Application**, is made by you, firmware developer
+Layer 1: **Driver layer**, only reads and writes frames from/to network hardware  
+Layer 2: **TCP/IP stack**, parses protocol headers and handles IP and TCP/UDP  
+Layer 3: **Network Library**, parses application protocols like MQTT or HTTP  
+Layer 4: **Application**, is made by you, firmware developer  
 
 
 Let's provide an example. In order to show your this guide on the Github, your
@@ -80,26 +80,32 @@ servers. Here's how your browser and the network stack work for that case:
 
 ![DNS request](media/dns.svg)
 
-1. Your browser (an application) asks from the lower layer (library),
-   "what IP address `github.com` has?". The lower layer provides an API
-   function `gethostbyname()` for that.
-2. The library layer receives the name `github.com` and creates a properly
-   formatted, binary DNS request: `struct dns_request`. Then it calls an
-   API function `sendto()` provided by the TCP/IP stack layer, to send that
-   request over UDP to the DNS server. The IP of the DNS server is known
-   to the library from the workstation settings.
-3. The TCP/IP stack's `sendto()` function gets a buffer to send. It prepends
-   UDP, IP, and MAC headers to the buffer, forming a frame. Then it calls
-   an API function `send_frame()` provided by the driver layer
-4. A driver's `send_frame()` function transmits a frame over the wire or over
-   the air, the frame travels to the destination DNS server and finally hits
-   DNS server's network card
-5. A driver on the DNS server receives a frame, and passes it up by
-   calling an API function `ethernet_input()` provided by the TCP/IP stack
-6. TCP/IP stack parses the frame, and finds out that it is for the UDP port 53,
-   which is a DNS port number. TCP/IP stack finds an application that
-   listens on UDP port 53, which is a DNS server application, and wakes up
-   its `read()` call, passing UDP payload to it
+**1.** Your browser (an application) asks from the lower layer (library), "what
+IP address `github.com` has?". The lower layer provides an API function
+`gethostbyname()` for that.
+
+**2.** The library layer receives the name `github.com` and creates a properly
+formatted, binary DNS request: `struct dns_request`. Then it calls an API
+function `sendto()` provided by the TCP/IP stack layer, to send that request
+over UDP to the DNS server. The IP of the DNS server is known to the library
+from the workstation settings.
+
+**3.** The TCP/IP stack's `sendto()` function gets a buffer to send. It
+prepends UDP, IP, and MAC headers to the buffer, forming a frame. Then it calls
+an API function `send_frame()` provided by the driver layer
+
+**4.** A driver's `send_frame()` function transmits a frame over the wire or
+over the air, the frame travels to the destination DNS server and finally hits
+DNS server's network card
+
+**5.** A driver on the DNS server receives a frame, and passes it up by calling
+an API function `ethernet_input()` provided by the TCP/IP stack
+
+**6.** TCP/IP stack parses the frame, and finds out that it is for the UDP port
+53, which is a DNS port number. TCP/IP stack finds an application that listens
+on UDP port 53, which is a DNS server application, and wakes up its `read()`
+call, passing UDP payload to it
+
 7. A DNS server application receives DNS request. A library routine parses
    the DNS request, and passes it on to the application layer:
    "someone wants an IP address for `github.com`". Then the application layer
@@ -126,23 +132,73 @@ applications don't use any external libraries: they use BSD socket API
 directly and implement library layer manually. Usually that is done when
 application decides to use some custom protocol.
 
-Embedded systems very often use TCP/IP stacks that provide the same BSD API
-as mainstream OSes do. For example, a well-known lwIP (LightWeight IP) TCP/IP
-stack, Keil's MDK TCP/IP stacks, Zephyr RTOS TCP/IP stack - all provide
-BSD socket API. Thus let's review the most important BSD API stack functions:
+Embedded systems very often use TCP/IP stacks that provide the same BSD API as
+mainstream OSes do. For example, lwIP (LightWeight IP) TCP/IP stack, Keil's MDK
+TCP/IP stack, Zephyr RTOS TCP/IP stack - all provide BSD socket API. Thus let's
+review the most important BSD API stack functions:
 
 - `socket(protocol)` - creates a connection descriptor and assigns an integer ID for it, a "socket"
-- `bind(sock, addr)` - assigns a local IP:PORT for a listening socket. If
-   protocol is TCP, and a handshake request arrives to that listening socket,
-   it can call the following API:
-- `accept(sock, addr)` - creates a new socket, and assigns both local IP:PORT
-   and remote IP:PORT for it, forming a connection
-- `connect(sock, addr)` - assigns both local IP:PORT and remote IP:PORT for
-   an socket, forming an outgoing connection. If protocol is TCP, it
-   initiates TCP handshake exchange
+- `bind(sock, addr)` - assigns a local IP:PORT for a listening socket
+- `accept(sock, addr)` - creates a new socket, assigns local IP:PORT
+   and remote IP:PORT (incoming)
+- `connect(sock, addr)` - assigns local IP:PORT and remote IP:PORT for
+   a socket (outgoing)
 - `send(sock, buf, len)` - sends data
 - `recv(sock, buf, len)` - receives data
 - `close(sock)` - closes a socket
+
+Some implementations do not implement BSD socket API, and there are perfectly
+good reasons for that. Examples for such implementation is lwIP raw API,
+and Mongoose Library.
+
+Let me demonstrate the two approaches on a simple
+TCP echo server example. TCP echo server is a simple application that
+listens on a TCP port, receives data from clients that connect to that port,
+and writes (echoes) that data back to the client. That means, this application
+does not use any application protocol on top of TCP, thus it does not need
+a library layer. Let's see how this application would look like written
+with a BSD socket API. First, a TCP listener should bind to a port, and
+for every connected client, spawn a new thread that would handle it:
+
+```c
+  // Create TCP socket
+  int sock = socket(PF_INET, SOCK_STREAM, 6);
+
+  // Let is listen on port 1234
+  struct sockaddr_in sin = {.sin_family = AF_INET, .sin_port = htons(1234), .sin_addr = INADDR_ANY };
+  bind(sock, &sin, sizeof(sin));
+
+  // Accept connections in the infinite loop
+  for (;;) {
+    struct sockaddr_in new_addr;  // This will receive IP:PORT of the remote peer
+    socklen_t len = sizeof(new_addr);
+    int accepted_socket = accept(sock, &new_addr, &len);
+    start_thread(handle_new_connection, (void *) accepted_socket);
+  }
+```
+
+For every new connection, a new thread executes the following code:
+
+```c
+void handle_new_connection(int sock) {
+  for (;;) {
+    char buf[20];
+    ssize_t len = recv(sock, buf, sizeof(buf), 0); // Receive data from remote
+    if (len <= 0) break;   // Error! Exit the loop, close socket, stop thread
+    send(sock, buf, len);  // Success. Echo data back
+  }
+  close(sock);
+}
+```
+
+Note that `recv()` function blocks until it receives some data from the
+client. Then, `send()` also blocks until is sends requested data back to the
+client. That means that this code cannot run in a bare metal implementation,
+because it will block the whole firmware. For this to work, an RTOS is
+required. A TCP/IP stack should run in a separate RTOS task, and both `send()`
+and `recv()` functions are implemented using an RTOS queue API, providing a
+blocking way to pass data from one task to another. Overall, this is how
+an embedded receive path looks like with socket API:
 
 
 
