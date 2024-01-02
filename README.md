@@ -263,9 +263,15 @@ further on, for the following reasons:
 - Mongoose provides a simple, polished callback API designed specifically
   for embedded developers
 
+The diagram below shows Mongoose architecture. As you can see, Mongoose can
+use external TCP/IP stack and TLS libraries, as well as built-in ones. In the
+following example, we are going to use only a built-in functionality, so we
+won't need any other software.
+
+![Mongoose architecture](media/mongoose.svg)
+
 All source code in this guide is MIT licensed, however Mongoose
 is licensed under a dual GPLv2/commercial license.
-
 I will be using a Nucleo board from ST Microelectronics, and there are several choices for the
 development environment:
 - Use Cube IDE provided by ST: [install Cube](https://www.st.com/en/development-tools/stm32cubeide.html)
@@ -280,7 +286,16 @@ on your workstation, and plug in Nucleo board to your workstation.
 
 The first step would be to create a minimal, skeleton firmware that does
 nothing but logs messages to the serial console. Once we've done that, we'll
-add networking functionality on top of it.
+add networking functionality on top of it. The table below summarises the
+UART peripheral settings for variours boards:
+
+
+| Board         | UART, TX, RX    | Ethernet                              |    LED |
+| ------------- | --------------- | ------------------------------------- | ------ |
+| Nucleo-H743ZI | USART3, D8, D9  | A1, A2, A7, B13, C1, C4, C5, G11, G13 | B0, E1, B14 |
+| Nucleo-H563ZI | USART3, D8, D9  | A1, A2, A7, B15, C1, C4, C5, G11, G13 | B0, F4, G4 |
+| Nucleo-F746ZG | USART3, D8, D9  | A1, A2, A7, B13, C1, C4, C5, G11, G13 | B0, B7, B14 |
+| Nucleo-F429ZI | USART3, D8, D9  | A1, A2, A7, B13, C1, C4, C5, G11, G13 | B0, B7, B14 |
 
 **Step 1.** Start Cube IDE. Choose File / New / STM32 project  
 **Step 2.** In the "part number" field, type "h743zi". That should narrow down
@@ -290,8 +305,13 @@ Click on it, then click on the Next button
 Answer "yes" if a popup dialog appears  
 **Step 4.** A configuration window appears. Click on Clock configuration tab.
 Find a field with a system clock value. Type the maximum value, hit enter,
-answer "yes" on auto-configuration question, wait  
-**Step 5.** 
+answer "yes" on auto-configuration question, wait until configured  
+**Step 5.** Switch to Pinout tab, Connectivity, then enable the UART controller
+and pins (see table above), choose "Asynchronous mode"  
+**Step 6.** Click on Connectivity / ETH, Choose Mode / RMII, verify that the
+configured pins are like in the table above - if not, change pins  
+**Step 7.** Click Ctrl+S to save the configuration. This generates the code
+and opens main.c file  
 
 
 ## Implementing layer 4 - a simple web server
