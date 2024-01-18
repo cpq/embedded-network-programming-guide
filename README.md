@@ -507,7 +507,7 @@ executed in any context, can safely write to it.
 
 The `mg_poll()` function in the infinite `while()` loop constantly
 verifies, whether we receive any data in the receive queue. When it detects
-a frame in the receive, it extracts that frame, passes it on to the
+a frame in the receive queue, it extracts that frame, passes it on to the
 [mg_tcp_rx()](https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/net_builtin.c#L800) function - which is an etry point to the layer 2 TCP/IP stack.
 
 
