@@ -495,8 +495,7 @@ see the "ok" message.
 
 How it works? Here is how. When a browser connects,
 an Ethernet IRQ handler (layer 1) kicks in. It is defined by Mongoose, and activated by
-the `#define MG_ENABLE_DRIVER_STM32H 1` line:
-https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/drivers/stm32h.c#L252
+the `#define MG_ENABLE_DRIVER_STM32H 1` line: [ETH_IRQHandler](https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/drivers/stm32h.c#L252).
 
 IRQ handler reads frame from the DMA, copies that frame to the Mongoose's
 [receive queue](https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/net_builtin.h#L30), and exits.
@@ -507,14 +506,13 @@ executed in any context, can safely write to it.
 The `mg_poll()` function in the infinite `while()` loop constantly
 verifies, whether we receive any data in the receive queue. When it detects
 a frame in the receive, it extracts that frame, passes it on to the
-`mg_tcp_rx()` function - which is an etry point to the layer 2 TCP/IP stack:
-https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/net_builtin.c#L800
+[mg_tcp_rx()](https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/net_builtin.c#L800) function - which is an etry point to the layer 2 TCP/IP stack.
+
 
 That `mg_tcp_rx()` function parses headers, starting from Ethernet header,
 and when it detects that a received frame belongs to one of the Mongoose
 TCP or UDP connections, it copies frame payload to the connection's `c->recv`
-buffer and calls `MG_EV_READ` event:
-https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/net_builtin.c#L687
+buffer and [calls `MG_EV_READ` event](https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/net_builtin.c#L687).
 
 
 At this point, processing leaves layer 2 and enters layer 3 - a library layer.
