@@ -534,10 +534,7 @@ ok
 
 This response goes to Mongoose's `c->send` output buffer, and `mg_mgr_poll()`
 drains that data to the browser, [splitting the response by frames](https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/net_builtin.c#L587-L588)
-in layer 2.
-
-
-Then passing to the layer 1. An Ethernet driver's output function [mg_tcpip_driver_stm32h_tx()](https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/drivers/stm32h.c#L208) sends those frames back to the browser.
+in layer 2, then passing to the layer 1. An Ethernet driver's output function [mg_tcpip_driver_stm32h_tx()](https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/drivers/stm32h.c#L208) sends those frames back to the browser.
 
 This is how Mongoose Library works.
 
