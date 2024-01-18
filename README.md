@@ -517,9 +517,8 @@ buffer and [calls `MG_EV_READ` event](https://github.com/cesanta/mongoose/blob/6
 
 At this point, processing leaves layer 2 and enters layer 3 - a library layer.
 Mongoose's HTTP event handlers catches `MG_EV_READ`, parses received data,
-and when it detects that the full HTTP message is buffered, it sends the
-`MG_EV_HTTP_MSG` with parsed HTTP message to the application - layer 4:
-https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/http.c#L1033
+and when it detects that the full HTTP message is buffered, it [sends the
+`MG_EV_HTTP_MSG` with parsed HTTP message](https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/http.c#L1033) to the application - layer 4.
 
 And this is where our event handler function `fn()` gets called. Our code is
 simple - we catch `MG_EV_HTTP_MSG` event, and use Mongoose's API function
@@ -532,11 +531,11 @@ ok
 ```
 
 This response goes to Mongoose's `c->send` output buffer, and `mg_mgr_poll()`
-drains that data to the browser, splitting the response by frames in layer 2: https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/net_builtin.c#L587-L588
+drains that data to the browser, [splitting the response by frames](https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/net_builtin.c#L587-L588)
+in layer 2.
 
 
-Then passing to the layer 1. An Ethernet driver's output function to sends
-those frames back to the browser: https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/drivers/stm32h.c#L208
+Then passing to the layer 1. An Ethernet driver's output function [mg_tcpip_driver_stm32h_tx()](https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/drivers/stm32h.c#L208) sends those frames back to the browser.
 
 This is how Mongoose Library works.
 
