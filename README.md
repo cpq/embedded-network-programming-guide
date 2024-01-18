@@ -372,7 +372,7 @@ Our skeleton firmware is ready!
 ### Integrating Mongoose
 
 Now it's time to implement a functional TCP/IP stack. We'll use Mongoose
-Library for that. To integrate it, we need to copy two files into our sources.
+Library for that. To integrate it, we need to copy two files into our source tree.
 
 **Step 1**. Open https://github.com/cesanta/mongoose in your browser, click on "mongoose.h". Click on "Raw" button, and copy file contents into clipboard.
 In the CubeIDE, right click on Core/Inc, choose New/File in the menu, type
@@ -472,7 +472,81 @@ hence implement layer 4.
 
 ## Implementing layer 4 - a simple web server
 
-## Baremetal, RTOS, and OS environments
+Let's add a very simple web server that responds "ok" to any HTTP request.
+
+**Step 1**. After the `mg_tcpip_init()` call, add this line that creates HTTP listener
+with `fn` event handler function:
+```c
+  mg_http_listen(&mgr, "http://0.0.0.0:80", fn, NULL);
+```
+**Step 2**. Before the `mg_millis()` function, add the `fn` event handler
+function:
+```c
+static void fn(struct mg_connection *c, int ev, void *ev_data) {
+  if (ev == MG_EV_HTTP_MSG) {
+    struct mg_http_message *hm = ev_data;  // Parsed HTTP request
+    mg_http_reply(c, 200, "", "ok\r\n");
+  }
+}
+```
+
+That's it! Flash the firmare. Open your browser, type board's IP address and
+see the "ok" message.
+
+How it works? Here is how. When a browser connects,
+an Ethernet IRQ handler (layer 1) kicks in. It is defined by Mongoose, and activated by
+the `#define MG_ENABLE_DRIVER_STM32H 1` line:
+https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/drivers/stm32h.c#L252
+
+IRQ handler reads frame from the DMA, copies that frame to the Mongoose's
+[receive queue](https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/net_builtin.h#L30), and exits.
+That receive queue is special, it is a thread-safe
+single-producer-single-consumer non-blocking queue, so an IRQ handler, being
+executed in any context, can safely write to it.
+
+The `mg_poll()` function in the infinite `while()` loop constantly
+verifies, whether we receive any data in the receive queue. When it detects
+a frame in the receive, it extracts that frame, passes it on to the
+`mg_tcp_rx()` function - which is an etry point to the layer 2 TCP/IP stack:
+https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/net_builtin.c#L800
+
+That `mg_tcp_rx()` function parses headers, starting from Ethernet header,
+and when it detects that a received frame belongs to one of the Mongoose
+TCP or UDP connections, it copies frame payload to the connection's `c->recv`
+buffer and calls `MG_EV_READ` event:
+https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/net_builtin.c#L687
+
+
+At this point, processing leaves layer 2 and enters layer 3 - a library layer.
+Mongoose's HTTP event handlers catches `MG_EV_READ`, parses received data,
+and when it detects that the full HTTP message is buffered, it sends the
+`MG_EV_HTTP_MSG` with parsed HTTP message to the application - layer 4:
+https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/http.c#L1033
+
+And this is where our event handler function `fn()` gets called. Our code is
+simple - we catch `MG_EV_HTTP_MSG` event, and use Mongoose's API function
+`mg_http_reply()` to craft a simple HTTP response:
+```
+HTTP/1.1 200 OK
+Content-Length: 4
+
+ok
+```
+
+This response goes to Mongoose's `c->send` output buffer, and `mg_mgr_poll()`
+drains that data to the browser, splitting the response by frames in layer 2:
+https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/net_builtin.c#L587-L588
+
+
+Then passing to the layer 1. An Ethernet driver's output function to sends
+those frames back to the browser:
+https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/drivers/stm32h.c#L208
+
+This is how Mongoose Library works.
+
+Other implementations, like Zephyr, Amazon FreeRTOS-TCP, Azure, lwIP, work in
+a similar way. They implement BSD socket layer so it is a bit more complicated
+cause it includes an extra socket layer, but the principle is the same.
 
 ## Implementing Web UI
 
