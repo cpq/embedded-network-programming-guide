@@ -495,7 +495,9 @@ see the "ok" message.
 
 How it works? Here is how. When a browser connects,
 an Ethernet IRQ handler (layer 1) kicks in. It is defined by Mongoose, and activated by
-the `#define MG_ENABLE_DRIVER_STM32H 1` line: [ETH_IRQHandler](https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/drivers/stm32h.c#L252).
+the `#define MG_ENABLE_DRIVER_STM32H 1` line in the `mongoose_custom.h`: [ETH_IRQHandler](https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/drivers/stm32h.c#L252). Other environments, like CubeIDE, implement `ETH_IRQHandler`
+and activate it when you select "Enable Ethernet interrupt" in the Ethernet
+configuration. To avoid clash with Cube, we did not activate Ethernet interrupt.
 
 IRQ handler reads frame from the DMA, copies that frame to the Mongoose's
 [receive queue](https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/net_builtin.h#L30), and exits.
