@@ -359,7 +359,8 @@ __attribute__((weak)) int _write(int file, char *ptr, int len) {
   return len;
 }
 ```
-**Step 10.** Attach a serial monitor tool (e.g. putty on Windows, or
+**Step 10.** Click on "Run" button to flash this firmware to the board.  
+**Step 11.** Attach a serial monitor tool (e.g. putty on Windows, or
 `cu -l COMPORT -s 115200` on Mac/Linux) and observe UART logs:
 ```
 Tick: 90358
@@ -367,6 +368,105 @@ Tick: 90860
 ...
 ```
 Our skeleton firmware is ready!
+
+### Integrating Mongoose
+
+Now it's time to implement a functional TCP/IP stack. We'll use Mongoose
+Library for that. To integrate it, we need to copy two files into our sources.
+
+**Step 1**. Open https://github.com/cesanta/mongoose in your browser, click on "mongoose.h". Click on "Raw" button, and copy file contents into clipboard.
+In the CubeIDE, right click on Core/Inc, choose New/File in the menu, type
+"mongoose.h", paste the file content and save.  
+**Step 2**. Repeat for "mongoose.c". On Github, copy `mongoose.c` contents
+to the clipboard. In the CubeIDE, right click on Core/Src, choose New/File
+in the menu, type "mongoose.c", paste the file content and save.  
+**Step 3**. Right click on Core/Inc, choose New/File in the menu, type
+"mongoose_custom.h", and paste the following contents:
+```c
+#pragma once
+
+// See https://mongoose.ws/documentation/#build-options
+#define MG_ARCH MG_ARCH_NEWLIB
+
+#define MG_ENABLE_TCPIP 1          // Enables built-in TCP/IP stack
+#define MG_ENABLE_CUSTOM_MILLIS 1  // We must implement mg_millis()
+#define MG_ENABLE_DRIVER_STM32H 1  // On STM32Fxx series, use MG_ENABLE_DRIVER_STM32F
+```
+**Step 4**. Implement Layer 1 (driver), 2 (TCP/IP stack) and 3 (library) in
+our code. Open `main.c`. Add `#include "mongoose.h"` at the top:
+```c
+/* USER CODE BEGIN Includes */
+#include "mongoose.h"
+/* USER CODE END Includes */
+```
+**Step 5**. Before `main()`, define function `mg_millis()` that returns
+an uptime in milliseconds. It will be used by Mongoose Library for the time
+keeping:
+```c
+/* USER CODE BEGIN 0 */
+uint64_t mg_millis(void) {
+  return HAL_GetTick();
+}
+/* USER CODE END 0 */
+```
+**Step 6**. Navigate to `main()` function and change the code around `while`
+loop this way:
+```c
+  struct mg_mgr mgr;
+  mg_mgr_init(&mgr);
+  mg_log_set(MG_LL_DEBUG);
+
+  // On STM32Fxx, use _stm32f suffix instead of _stm32h
+  struct mg_tcpip_driver_stm32h_data driver_data = {.mdc_cr = 4};
+  struct mg_tcpip_if mif = {.mac = {2,3,4,5,6,7},
+                            // Uncomment below for static configuration:
+                            // .ip = mg_htonl(MG_U32(192, 168, 0, 223)),
+                            // .mask = mg_htonl(MG_U32(255, 255, 255, 0)),
+                            // .gw = mg_htonl(MG_U32(192, 168, 0, 1)),
+                            .driver = &mg_tcpip_driver_stm32h,
+                            .driver_data = &driver_data};
+  NVIC_EnableIRQ(ETH_IRQn);
+  mg_tcpip_init(&mgr, &mif);
+
+  while (1)
+  {
+    mg_mgr_poll(&mgr, 0);
+```
+
+**Step 7**. Connect your board to the Ethernet. Flash firmware. In the serial
+log, you should see something like this:
+```
+bb8    3 mongoose.c:14914:mg_tcpip_driv Link is 100M full-duplex
+bbd    1 mongoose.c:4676:onstatechange  Link up
+bc2    3 mongoose.c:4776:tx_dhcp_discov DHCP discover sent. Our MAC: 02:03:04:05:06:07
+c0e    3 mongoose.c:4755:tx_dhcp_reques DHCP req sent
+c13    2 mongoose.c:4882:rx_dhcp_client Lease: 86400 sec (86403)
+c19    2 mongoose.c:4671:onstatechange  READY, IP: 192.168.2.76
+c1e    2 mongoose.c:4672:onstatechange         GW: 192.168.2.1
+c24    2 mongoose.c:4673:onstatechange        MAC: 02:03:04:05:06:07
+```
+If you don't, and see DHCP requests message like this:
+```
+130b0  3 mongoose.c:4776:tx_dhcp_discov DHCP discover sent. Our MAC: 02:03:04:05:06:07
+13498  3 mongoose.c:4776:tx_dhcp_discov DHCP discover sent. Our MAC: 02:03:04:05:06:07
+...
+```
+The most common cause for this is you have your Ethernet pins wrong. Click
+on the .ioc file, go to the Ethernet configuration, and double-check the
+Ethernet pins against the table above.
+
+**Step 8**. Open terminal/command prompt, and run a `ping` command against
+the IP address of your board:
+```sh
+~$ ping 192.168.2.76
+PING 192.168.2.76 (192.168.2.76): 56 data bytes
+64 bytes from 192.168.2.76: icmp_seq=0 ttl=64 time=9.515 ms
+64 bytes from 192.168.2.76: icmp_seq=1 ttl=64 time=1.012 ms
+```
+
+Now, we have a functional network stack running on our board. Layers 1,2,3
+are implemented. It's time to create an application - a simple web server,
+hence implement layer 4.
 
 ## Implementing layer 4 - a simple web server
 
