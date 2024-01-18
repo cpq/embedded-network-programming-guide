@@ -412,6 +412,7 @@ uint64_t mg_millis(void) {
 **Step 6**. Navigate to `main()` function and change the code around `while`
 loop this way:
 ```c
+  /* USER CODE BEGIN WHILE */
   struct mg_mgr mgr;
   mg_mgr_init(&mgr);
   mg_log_set(MG_LL_DEBUG);
@@ -431,6 +432,7 @@ loop this way:
   while (1)
   {
     mg_mgr_poll(&mgr, 0);
+    /* USER CODE END WHILE */
 ```
 
 **Step 7**. Connect your board to the Ethernet. Flash firmware. In the serial
@@ -458,7 +460,7 @@ Ethernet pins against the table above.
 **Step 8**. Open terminal/command prompt, and run a `ping` command against
 the IP address of your board:
 ```sh
-~$ ping 192.168.2.76
+$ ping 192.168.2.76
 PING 192.168.2.76 (192.168.2.76): 56 data bytes
 64 bytes from 192.168.2.76: icmp_seq=0 ttl=64 time=9.515 ms
 64 bytes from 192.168.2.76: icmp_seq=1 ttl=64 time=1.012 ms
