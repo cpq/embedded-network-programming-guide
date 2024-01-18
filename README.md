@@ -76,7 +76,7 @@ stack), is organised in four layers.
 Layer 1: **Driver layer**, only reads and writes frames from/to network hardware  
 Layer 2: **TCP/IP stack**, parses protocol headers and handles IP and TCP/UDP  
 Layer 3: **Network Library**, parses application protocols like DNS, MQTT, HTTP  
-Layer 4: **Application**, is made by you, firmware developer  
+Layer 4: **Application** - Web dashboard, smart sensor, etc
 
 
 ### DNS request example
@@ -89,35 +89,51 @@ servers. Here's how your browser and the network stack work for that case:
 ![DNS request](media/dns.svg)
 
 **1.** Your browser (an application) asks from the lower layer (library), "what
-IP address `github.com` has?". The lower layer provides an API function
-`gethostbyname()` for that.
+IP address `github.com` has?". The lower layer (layer 3, a library layer - in
+this case, it is a C library) provides an API function `gethostbyname()`
+that returns an IP address for a given host name. So everything said below,
+essentially describes how `gethostbyname()` works.
 
-**2.** The library layer receives the name `github.com` and creates a properly
+**2.** The library layer gets the name `github.com` and creates a properly
 formatted, binary DNS request: `struct dns_request`. Then it calls an API
-function `sendto()` provided by the TCP/IP stack layer, to send that request
-over UDP to the DNS server. The IP of the DNS server is known to the library
-from the workstation settings.
+function `sendto()` provided by the TCP/IP stack layer (layer 2), to send that
+request over UDP to the DNS server. The IP of the DNS server is known to the library
+from the workstation settings. The UDP port is also known - port 53, a standard
+port for DNS.
 
-**3.** The TCP/IP stack's `sendto()` function gets a buffer to send. It
-prepends UDP, IP, and MAC headers to the buffer, forming a frame. Then it calls
-an API function `send_frame()` provided by the driver layer
+**3.** The TCP/IP stack's `sendto()` function receives a chunk of data to send.
+it contains DNS request, but `sendto()` does not know that and does not care
+about that. All it knows is that this is the piece of user data that needs to
+be delievered over UDP to a certain IP address (IP address of a DNS server) on
+port 53. Hence TCP/IP stack prepends UDP, IP, and MAC headers
+to the user data to form a frame. Then it calls API function `send_frame()`
+provided by the driver layer, layer 1.
 
 **4.** A driver's `send_frame()` function transmits a frame over the wire or
-over the air, the frame travels to the destination DNS server and finally hits
-DNS server's network card
+over the air, the frame travels to the destination DNS server. A chain of
+Internet routers pass that frame from one to another, until a frame finally hits
+DNS server's network card.
 
-**5.** A driver on the DNS server receives a frame, and passes it up by calling
-an API function `ethernet_input()` provided by the TCP/IP stack
+**5.** A network card on the DNS server gets a frame and generates a hardware
+interrupt, invoking interrupt handler. It is part of a driver - layer 1. It
+calls a function `recv_frame()` that reads a frame from the card, and passes
+it up by calling `ethernet_input()` function provided by the TCP/IP stack
 
 **6.** TCP/IP stack parses the frame, and finds out that it is for the UDP port
 53, which is a DNS port number. TCP/IP stack finds an application that listens
-on UDP port 53, which is a DNS server application, and wakes up its `read()`
-call, passing UDP payload to it
+on UDP port 53, which is a DNS server application, and wakes up its `recv()`
+call. So, DNS server application that is blocked on a `recv()` call, receives
+a chunk of data - which is a DNS request. A library routine parses that request
+by extracting a host name, and passes that parsed DNS request to the application.
 
-**7.** A DNS server application receives DNS request. A library routine parses
-the DNS request, and passes it on to the application layer: "someone wants an
-IP address for `github.com`". Then the application layer decides, what to
-respond, and the response travels all the way back in the reverse order.
+
+**7.** A DNS server application receives DNS request: "someone wants an
+IP address for `github.com`". Then the application layer looks at its
+configuration, figures out "Oh, it's me who is responsible for the github.com
+domain, and this is the IP address I should respond with". The application
+extracts an IP address from the configuration, and calls a library function
+"get this IP, wrap into a DNS response, and send back". And the response
+travels all the way back in the reverse order.
 
 ### BSD socket API
 
