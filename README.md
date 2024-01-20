@@ -334,7 +334,8 @@ answer "yes" on auto-configuration question, wait until configured
 and pins (see table above), choose "Asynchronous mode"  
 **Step 6.** Click on Connectivity / ETH, Choose Mode / RMII, verify that the
 configured pins are like in the table above - if not, change pins  
-**Step 7.** Click on the first LED GPIO, select "GPIO output"  
+**Step 7.** Lookup the LED GPIO from the peripherals table, and configure it
+for output. Click on the corresponding pin, select "GPIO output"  
 **Step 8.** Click Ctrl+S to save the configuration. This generates the code
 and opens main.c file  
 **Step 9.** Navigate to the `main()` function and add some logging to the
@@ -410,27 +411,29 @@ uint64_t mg_millis(void) {
   return HAL_GetTick();
 }
 /* USER CODE END 0 */
-``` **Step 6 * *.Navigate to `main()` function and change the code around `while` loop this way :
+```
+**Step 6 **. Navigate to `main()` function and change the code around `while`
+loop this way:
 ```c
     /* USER CODE BEGIN WHILE */
     struct mg_mgr mgr;
-mg_mgr_init(&mgr);
-mg_log_set(MG_LL_DEBUG);
+    mg_mgr_init(&mgr);
+    mg_log_set(MG_LL_DEBUG);
 
-// On STM32Fxx, use _stm32f suffix instead of _stm32h
-struct mg_tcpip_driver_stm32h_data driver_data = {.mdc_cr = 4};
-struct mg_tcpip_if mif = {.mac = {2, 3, 4, 5, 6, 7},
-                          // Uncomment below for static configuration:
-                          // .ip = mg_htonl(MG_U32(192, 168, 0, 223)),
-                          // .mask = mg_htonl(MG_U32(255, 255, 255, 0)),
-                          // .gw = mg_htonl(MG_U32(192, 168, 0, 1)),
-                          .driver = &mg_tcpip_driver_stm32h,
-                          .driver_data = &driver_data};
-NVIC_EnableIRQ(ETH_IRQn);
-mg_tcpip_init(&mgr, &mif);
+    // On STM32Fxx, use _stm32f suffix instead of _stm32h
+    struct mg_tcpip_driver_stm32h_data driver_data = {.mdc_cr = 4};
+    struct mg_tcpip_if mif = {.mac = {2, 3, 4, 5, 6, 7},
+                              // Uncomment below for static configuration:
+                              // .ip = mg_htonl(MG_U32(192, 168, 0, 223)),
+                              // .mask = mg_htonl(MG_U32(255, 255, 255, 0)),
+                              // .gw = mg_htonl(MG_U32(192, 168, 0, 1)),
+                              .driver = &mg_tcpip_driver_stm32h,
+                              .driver_data = &driver_data};
+    NVIC_EnableIRQ(ETH_IRQn);
+    mg_tcpip_init(&mgr, &mif);
 
-while (1) {
-  mg_mgr_poll(&mgr, 0);
+    while (1) {
+      mg_mgr_poll(&mgr, 0);
   /* USER CODE END WHILE */
 ```
 
