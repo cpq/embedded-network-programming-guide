@@ -694,8 +694,9 @@ Discord server and let me know.
 What I'll do is to move that UI into the Cube project of ours.
 
 **Step 1.** Copy net.c, net.h, packed_fs.c into the Cube project  
-**Step 2.** Add `include "net.h"` at the top of the main.c file  
+**Step 2.** Add the following `include "net.h"` at the top of the main.c file  
 **Step 3.** Comment out `mg_http_listen(...)` call, add `web_init()` call  
+**Step 4.** Open net.h, modify HTTP_URL port 8000 to port 80
 
 Rebuild, reflash, refresh your browser. We have a functional versatile
 Web UI device dashboard reference running!
