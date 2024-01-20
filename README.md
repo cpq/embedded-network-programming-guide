@@ -659,10 +659,46 @@ Build and flash this firmware. Refresh the page in the browser. Clicl on the
 button - and now, LED toggle works!
 
 This is the flow for the Web UI of any complexity. Now, it is just a matter of
-creating a professional interface with corresponding API calls, to create
-appealing, responsive, professional Web UIs on any microcontroller.
+creating a professional UI interface using any suitable JS/CSS framework, and
+extending the event handler function with the API calls that that UI invokes.
+That's all it takes.
 
 ## Implementing Device Dashboard
+
+Let me show you how to repeat everything we did in Cube - in the make + GCC
+environment in one minute. Navigate to https://mongoose.ws/demo/?clear=1
+This simple web tool creates a make project completely in your browser.
+Choose the board, the "simple project". You can download the project to your
+workstation and build manually. But we'll build in a browser - click on Build
+button. That zips the projects and sends it to mongoose.ws site, which has
+ARM GCC preinstalled. It simply runs `make`, creates firmware binary, and
+sends that binary back to your browser. Now you can download that binary,
+or flash it directly from your browser.
+
+The "simple" project repeats what we've already done in Cube, with one
+important difference - it also implements TLS. In other words, it can serve
+both HTTP and HTTPS. Note that the binary size is less than 60 Kb! We will
+cover TLS later, as it needs a separate discussion.
+
+Now, let's click on "Start Over" button and build "Web UI Dashboard" project.
+It follows absolutely the same flow as "simple" project, just the Web UI is
+significantly more versatile, built with Preact JS framework and Tailwind CSS
+framework. The event handler function moved into a separate file, `net.c`,
+and supports many API calls required by Web UI - to show dashboard stats,
+settings, and firmware update. By the way, the firmware update is completely
+functional - but I won't cover it here, as it is a big topic on itself.
+I won't cover the process of static UI creation in React, as there are tons
+of very good tutorials on that. But if you want me to cover that, join our
+Discord server and let me know.
+
+What I'll do is to move that UI into the Cube project of ours.
+
+**Step 1.** Copy net.c, net.h, packed_fs.c into the Cube project  
+**Step 2.** Add `include "net.h"` at the top of the main.c file  
+**Step 3.** Comment out `mg_http_listen(...)` call, add `web_init()` call  
+
+Rebuild, reflash, refresh your browser. We have a functional versatile
+Web UI device dashboard reference running!
 
 ## Implementing MQTT client
 
