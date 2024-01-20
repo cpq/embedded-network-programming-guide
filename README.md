@@ -413,7 +413,7 @@ uint64_t mg_millis(void) {
 }
 /* USER CODE END 0 */
 ```
-**Step 6 **. Navigate to `main()` function and change the code around `while`
+**Step 6**. Navigate to `main()` function and change the code around `while`
 loop this way:
 ```c
     /* USER CODE BEGIN WHILE */
@@ -503,7 +503,7 @@ function - and this way, Mongoose's printf can print virtually anything.
 For example, JSON strings. That said, with the aid of `mg_http_reply()`,
 we can generate HTTP responses of arbitrary complexity.
 
-How it works? Here is how. When a browser connects,
+So, how the whole flow works? Here is how. When a browser connects,
 an Ethernet IRQ handler (layer 1) kicks in. It is defined by Mongoose, and activated by
 the `#define MG_ENABLE_DRIVER_STM32H 1` line in the `mongoose_custom.h`: [ETH_IRQHandler](https://github.com/cesanta/mongoose/blob/68e2cd9b296733c9aea8b3401ab946dd25de9c0e/src/drivers/stm32h.c#L252). Other environments, like CubeIDE, implement `ETH_IRQHandler`
 and activate it when you select "Enable Ethernet interrupt" in the Ethernet
