@@ -339,7 +339,8 @@ for output. Click on the corresponding pin, select "GPIO output"
 **Step 8.** Click Ctrl+S to save the configuration. This generates the code
 and opens main.c file  
 **Step 9.** Navigate to the `main()` function and add some logging to the
-`while` loop:
+`while` loop. Make sure to insert your code between the "USER CODE" comments,
+because CubeIDE will preserve it during code regeneration:
 ```c
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -372,7 +373,7 @@ Tick: 90860
 ```
 Our skeleton firmware is ready!
 
-### Integrating Mongoose
+### Integrate Mongoose
 
 Now it's time to implement a functional TCP/IP stack. We'll use Mongoose
 Library for that. To integrate it, we need to copy two files into our source tree.
@@ -480,8 +481,10 @@ Let's add a very simple web server that responds "ok" to any HTTP request.
 with `fn` event handler function:
 ```c
   mg_http_listen(&mgr, "http://0.0.0.0:80", fn, NULL);
-``` **Step 2 * *.Before the `mg_millis()` function, add the `fn` event handler function :
-```c static void fn(struct mg_connection * c, int ev, void *ev_data) {
+```
+**Step 2 **. Before the `mg_millis()` function, add the `fn` event handler function :
+```c
+static void fn(struct mg_connection * c, int ev, void *ev_data) {
   if (ev == MG_EV_HTTP_MSG) {
     struct mg_http_message *hm = ev_data;  // Parsed HTTP request
     mg_http_reply(c, 200, "", "ok\r\n");
