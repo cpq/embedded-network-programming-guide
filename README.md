@@ -482,7 +482,7 @@ with `fn` event handler function:
 ```c
   mg_http_listen(&mgr, "http://0.0.0.0:80", fn, NULL);
 ```
-**Step 2 **. Before the `mg_millis()` function, add the `fn` event handler function :
+**Step 2**. Before the `mg_millis()` function, add the `fn` event handler function:
 ```c
 static void fn(struct mg_connection * c, int ev, void *ev_data) {
   if (ev == MG_EV_HTTP_MSG) {
@@ -491,7 +491,6 @@ static void fn(struct mg_connection * c, int ev, void *ev_data) {
   }
 }
 ```
-
 That's it! Flash the firmare. Open your browser, type board's IP address and
 see the "ok" message.
 
