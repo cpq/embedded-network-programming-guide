@@ -484,7 +484,7 @@ with `fn` event handler function:
 ```
 **Step 2**. Before the `mg_millis()` function, add the `fn` event handler function:
 ```c
-static void fn(struct mg_connection * c, int ev, void *ev_data) {
+static void fn(struct mg_connection *c, int ev, void *ev_data) {
   if (ev == MG_EV_HTTP_MSG) {
     struct mg_http_message *hm = ev_data;  // Parsed HTTP request
     mg_http_reply(c, 200, "", "ok\r\n");
@@ -493,6 +493,15 @@ static void fn(struct mg_connection * c, int ev, void *ev_data) {
 ```
 That's it! Flash the firmare. Open your browser, type board's IP address and
 see the "ok" message.
+
+Note that the [mg_http_reply()](https://mongoose.ws/documentation/#mg_http_reply)
+function is very versatile: it cat create formatted output, like printf
+on steroids. See [mg_snprintf()](https://mongoose.ws/documentation/#mg_snprintf-mg_vsnprintf)
+for the supported format specifiers: most of them are standard printf, but
+there are two non-standard: `%m` and `%M` that accept custom formatting
+function - and this way, Mongoose's printf can print virtually anything.
+For example, JSON strings. That said, with the aid of `mg_http_reply()`,
+we can generate HTTP responses of arbitrary complexity.
 
 How it works? Here is how. When a browser connects,
 an Ethernet IRQ handler (layer 1) kicks in. It is defined by Mongoose, and activated by
