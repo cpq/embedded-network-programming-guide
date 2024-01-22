@@ -27,7 +27,7 @@ Mouser](https://www.mouser.ie/ProductDetail/STMicroelectronics/NUCLEO-H743ZI2?qs
 When any two devices communicate, they exchange discrete pieces of data called
 frames. Frames can be sent over the wire (like Ethernet) or over the air (like
 WiFi or Cellular).  Frames differ in size, and typically range from couple of
-dozen bytes to a 1.5Kb.  Each frame cosists of a sequence of protocol headers
+dozen bytes to a 1.5Kb.  Each frame consists of a sequence of protocol headers
 followed by user data:
 
 ![Network Frame](media/frame.svg)
@@ -138,7 +138,7 @@ travels all the way back in the reverse order.
 ### BSD socket API
 
 The communication between layers are done via a function calls. So, each
-layer has its own API, which uppper and lower level can call. They are not
+layer has its own API, which upper and lower levels can call. They are not
 standardized, so each implementation provides their own set of functions.
 However, on OSes like Windows/Mac/Linux/UNIX, a driver and TCP/IP layers are
 implemented in kernel, and TCP/IP layer provides a standard API to the
@@ -313,7 +313,7 @@ https://www.youtube.com/watch?v=lKYM4b8TZts
 The first step would be to create a minimal, skeleton firmware that does
 nothing but logs messages to the serial console. Once we've done that, we'll
 add networking functionality on top of it. The table below summarises
-peripherals for variours boards:
+peripherals for various boards:
 
 
 | Board         | UART, TX, RX    | Ethernet                              |    LED |
@@ -329,11 +329,11 @@ for example "H743ZI". That should narrow down
 the MCU/MPU list selection in the bottom right corner to a single row.
 Click on the row at the bottom right, then click on the Next button  
 **Step 3.** In the project name field, type any name, click Finish.
-Answer "yes" if a popup dialog appears  
+Answer "yes" if a pop-up dialog appears  
 **Step 4.** A configuration window appears. Click on Clock configuration tab.
 Find a field with a system clock value. Type the maximum value, hit enter,
 answer "yes" on auto-configuration question, wait until configured  
-**Step 5.** Switch to Pinout tab, Connectivity, then enable the UART controller
+**Step 5.** Switch to the Pinout tab, Connectivity, then enable the UART controller
 and pins (see table above), choose "Asynchronous mode"  
 **Step 6.** Click on Connectivity / ETH, Choose Mode / RMII, verify that the
 configured pins are like in the table above - if not, change pins  
@@ -460,7 +460,7 @@ If you don't, and see DHCP requests message like this:
 ...
 ```
 The most common cause for this is you have your Ethernet pins wrong. Click
-on the .ioc file, go to the Ethernet configuration, and double-check the
+on the `.ioc` file, go to the Ethernet configuration, and double-check the
 Ethernet pins against the table above.
 
 **Step 8**. Open terminal/command prompt, and run a `ping` command against
@@ -494,7 +494,7 @@ static void fn(struct mg_connection *c, int ev, void *ev_data) {
   }
 }
 ```
-That's it! Flash the firmare. Open your browser, type board's IP address and
+That's it! Flash the firmware. Open your browser, type board's IP address and
 see the "ok" message.
 
 Note that the [mg_http_reply()](https://mongoose.ws/documentation/#mg_http_reply)
@@ -561,7 +561,7 @@ Using `mg_http_reply()` function is nice, but it's very good for creating
 custom responses. It is not suitable for serving files. And the standard way
 to build a web UI is to split it into two parts:
 - a static part, which consists of directory with `index.html`, CSS,
-  Javascript and image files,
+  JavaScript and image files,
 - a dynamic part, which serves REST API
 
 So instead of using `mg_http_reply()` and responding with "ok" to any request,
@@ -571,20 +571,20 @@ event handler code to use that function:
 
 ```c
 static void fn(struct mg_connection *c, int ev, void *ev_data) {
-      if (ev == MG_EV_HTTP_MSG) {
-        struct mg_http_message *hm = ev_data;  // Parsed HTTP request
-        struct mg_http_serve_opts opts = {.root_dir = "/web_root"};
-        mg_http_serve_dir(c, hm, &opts);
-      }
+  if (ev == MG_EV_HTTP_MSG) {
+    struct mg_http_message *hm = ev_data;  // Parsed HTTP request
+    struct mg_http_serve_opts opts = {.root_dir = "/web_root"};
+    mg_http_serve_dir(c, hm, &opts);
+  }
 }
 ```
 
-Build it and get build error "undefined reference to `mkdir'". This is because
+Build it and get build error "undefined reference to 'mkdir'". This is because
 `mg_http_serve_dir()` function tries to use a default POSIX filesystem to
 read files from directory `/web_root`, and our firmware does not have support
 for the POSIX filesystem.
 
-What are the possibilities here? First, we can implement POSIX filesytem,
+What are the possibilities here? First, we can implement POSIX filesystem,
 by using an internal or external flash memory. Then we can copy our `web_root`
 directory there, and our code will start to work. This is the hard way.
 
@@ -658,7 +658,7 @@ to different URLs. On `/api/led/get` URL request, we're responding with
 LED status, and on `/api/led/toggle` request, we're toggling the pin and
 responding with `true`.
 
-Build and flash this firmware. Refresh the page in the browser. Clicl on the
+Build and flash this firmware. Refresh the page in the browser. Click on the
 button - and now, LED toggle works!
 
 This is the flow for the Web UI of any complexity. Now, it is just a matter of
@@ -674,7 +674,7 @@ This simple web tool creates a make project completely in your browser.
 Choose the board, the "simple project". You can download the project to your
 workstation and build manually. But we'll build in a browser - click on Build
 button. That zips the projects and sends it to mongoose.ws site, which has
-ARM GCC preinstalled. It simply runs `make`, creates firmware binary, and
+ARM GCC pre-installed. It simply runs `make`, creates firmware binary, and
 sends that binary back to your browser. Now you can download that binary,
 or flash it directly from your browser.
 
