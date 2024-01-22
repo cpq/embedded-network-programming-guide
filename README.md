@@ -307,6 +307,9 @@ on your workstation, and plug in Nucleo board to your workstation.
 
 ### Skeleton firmware
 
+Note: this and the following sections has a Youtube helper video recorded:
+https://www.youtube.com/watch?v=lKYM4b8TZts
+
 The first step would be to create a minimal, skeleton firmware that does
 nothing but logs messages to the serial console. Once we've done that, we'll
 add networking functionality on top of it. The table below summarises
