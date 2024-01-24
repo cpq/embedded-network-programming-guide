@@ -316,12 +316,15 @@ add networking functionality on top of it. The table below summarises
 peripherals for various boards:
 
 
-| Board         | UART, TX, RX    | Ethernet                              |    LED |
-| ------------- | --------------- | ------------------------------------- | ------ |
-| Nucleo-H743ZI | USART3, D8, D9  | A1, A2, A7, B13, C1, C4, C5, G11, G13 | B0, E1, B14 |
-| Nucleo-H563ZI | USART3, D8, D9  | A1, A2, A7, B15, C1, C4, C5, G11, G13 | B0, F4, G4 |
-| Nucleo-F746ZG | USART3, D8, D9  | A1, A2, A7, B13, C1, C4, C5, G11, G13 | B0, B7, B14 |
-| Nucleo-F429ZI | USART3, D8, D9  | A1, A2, A7, B13, C1, C4, C5, G11, G13 | B0, B7, B14 |
+| Board            | UART, TX, RX    | Ethernet                              |    LED         |
+| ---------------- | --------------- | ------------------------------------- | -------------- |
+| STM32H747I-DISCO | USART1, A9, A10 | A1, A2, A7, C1, C4, C5, G12, G11, G13 | I12, I13, I14  |
+| STM32H573I-DK    | USART1, A9, A10 | A1, A2, A7, C1, C4, C5, G12, G11, G13 | I8, I9, F1     |
+| Nucleo-H743ZI    | USART3, D8, D9  | A1, A2, A7, C1, C4, C5, B13, G11, G13 | B0, E1, B14    |
+| Nucleo-H723ZG    | USART3, D8, D9  | A1, A2, A7, C1, C4, C5, B13, G11, G13 | B0, E1, B14    |
+| Nucleo-H563ZI    | USART3, D8, D9  | A1, A2, A7, C1, C4, C5, B15, G11, G13 | B0, F4, G4     |
+| Nucleo-F746ZG    | USART3, D8, D9  | A1, A2, A7, C1, C4, C5, B13, G11, G13 | B0, B7, B14    |
+| Nucleo-F429ZI    | USART3, D8, D9  | A1, A2, A7, C1, C4, C5, B13, G11, G13 | B0, B7, B14    |
 
 **Step 1.** Start Cube IDE. Choose File / New / STM32 project  
 **Step 2.** In the "part number" field, type the microcontroller name,
