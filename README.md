@@ -603,7 +603,7 @@ firmware binary, and there is no need to implement a "real" filesystem:
 **Step 2**. Enable packed filesystem, and disable POSIX filesystem in `mongoose_custom.h`:
   ```c
   #define MG_ENABLE_PACKED_FS 1
-  #define MG_ENABLE_FILE 0
+  #define MG_ENABLE_POSIX_FS 0
   ```
 **Step 3**. Create a new file `Core/Src/packed_fs.c`. Go to https://mongoose.ws/ui-pack/,
   review UI files. Copy/paste the contents of generated `packed_fs.c`, save.
