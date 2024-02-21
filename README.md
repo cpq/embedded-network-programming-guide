@@ -324,6 +324,7 @@ peripherals for various boards:
 | Nucleo-H723ZG    | USART3, D8, D9  | A1, A2, A7, C1, C4, C5, B13, G11, G13 | B0, E1, B14    |
 | Nucleo-H563ZI    | USART3, D8, D9  | A1, A2, A7, C1, C4, C5, B15, G11, G13 | B0, F4, G4     |
 | Nucleo-F746ZG    | USART3, D8, D9  | A1, A2, A7, C1, C4, C5, B13, G11, G13 | B0, B7, B14    |
+| Nucleo-F756ZG    | USART3, D8, D9  | A1, A2, A7, C1, C4, C5, B13, G11, G13 | B0, B7, B14    |
 | Nucleo-F429ZI    | USART3, D8, D9  | A1, A2, A7, C1, C4, C5, B13, G11, G13 | B0, B7, B14    |
 
 **Step 1.** Start Cube IDE. Choose File / New / STM32 project  
@@ -707,9 +708,8 @@ What I'll do is to move that UI into the Cube project of ours.
 Rebuild, reflash, refresh your browser. We have a functional versatile
 Web UI device dashboard reference running!
 
-## Implementing MQTT client
+## Device management using MQTT protocol
 
-## Implementing MQTT dashboard
 
 ## Enabling TLS
 
