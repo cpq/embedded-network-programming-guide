@@ -633,6 +633,50 @@ for device dashboard example in Mongoose repository, which not only packs,
 but also compresses files to minimise their size. But here, we'll use the
 web tool because it is visual and makes it easy to understand the flow.
 
+The static HTML is extremely simple. There 3 files: `index.html`, `style.css`
+and `main.js`. The `index.html` references, or loads, the other two:
+
+**index.html:**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="style.css" rel="stylesheet" />
+</head>
+<body>
+  <div class="main">
+    <h1>My Device</h1>
+    <span>LED status:</span>
+    <span id="status">0</span>
+    <button id="btn">Toggle LED</button>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>
+```
+
+**style.css:**
+```css
+.main  { margin: 1em; }
+#status { display: inline-block; width: 2em; }
+```
+
+The Javascript code in the `main.js` file installs an event handler on button
+click, so when a user clicks on a button, JS code makes HTTP requests - 
+I'll comment down below how it all works together:
+
+**main.js:**
+```javascript
+var getStatus = ev => fetch('api/led/get')
+  .then(r => r.json())
+  .then(r => { document.getElementById('status').innerHTML = r; });
+
+var toggle = ev => fetch('api/led/toggle')
+  .then(r => getStatus());
+
+document.getElementById('btn').onclick = toggle;
+```
+
 Now, let's flash the firmware. Go to the IP address in the browser - and
 now we see the Web UI with a button! Click on the button, and see that nothing
 happens! The LED does not turn on and off. Open developer tools and see that
@@ -665,6 +709,8 @@ responding with `true`.
 Build and flash this firmware. Refresh the page in the browser. Click on the
 button - and now, LED toggle works! If we open developer tools in the browser,
 we can see the sequence of the network requests made by the browser.
+
+![Simple Web UI screenshot](media/simple_ui.webp)
 
 Below is the diagram of the interaction between the browser and the device,
 with explanations of every step:
