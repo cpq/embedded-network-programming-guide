@@ -663,7 +663,13 @@ LED status, and on `/api/led/toggle` request, we're toggling the pin and
 responding with `true`.
 
 Build and flash this firmware. Refresh the page in the browser. Click on the
-button - and now, LED toggle works!
+button - and now, LED toggle works! If we open developer tools in the browser,
+we can see the sequence of the network requests made by the browser.
+
+Below is the diagram of the interaction between the browser and the device,
+with explanations of every step:
+
+![Web UI sequence flow](media/web_ui_flow.svg)
 
 This is the flow for the Web UI of any complexity. Now, it is just a matter of
 creating a professional UI interface using any suitable JS/CSS framework, and
