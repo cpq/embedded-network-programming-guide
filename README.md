@@ -41,7 +41,7 @@ Protocol is usually 0x800, which means that the next header is IP. MAC header
 handles addressing in the local network (LAN).
 
 
-**IP (Inernet Protocol) header** has many fields, but the most important are:
+**IP (Internet Protocol) header** has many fields, but the most important are:
 destination IP address, source IP address, and upper level protocol. IP
 addresses are 4-bytes, e.g. `209.85.202.102`, and they identify a machine
 on the Internet, so their purpose is similar to phone numbers. The upper level
